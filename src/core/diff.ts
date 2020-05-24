@@ -47,7 +47,7 @@ export function shallow(previousProperty: any, newProperty: any, depth = 0): Pro
 	} else {
 		changed = newKeys.some((key) => {
 			if (depth > 0) {
-				return shallow(newProperty[key], previousProperty[key], depth - 1).changed;
+				return auto(newProperty[key], previousProperty[key], depth - 1).changed;
 			}
 			return newProperty[key] !== previousProperty[key];
 		});
@@ -58,7 +58,7 @@ export function shallow(previousProperty: any, newProperty: any, depth = 0): Pro
 	};
 }
 
-export function auto(previousProperty: any, newProperty: any): PropertyChangeRecord {
+export function auto(previousProperty: any, newProperty: any, depth = 0): PropertyChangeRecord {
 	let result;
 	if (typeof newProperty === 'function') {
 		if (newProperty._type === WIDGET_BASE_TYPE) {
@@ -67,7 +67,7 @@ export function auto(previousProperty: any, newProperty: any): PropertyChangeRec
 			result = ignore(previousProperty, newProperty);
 		}
 	} else if (isObjectOrArray(newProperty)) {
-		result = shallow(previousProperty, newProperty);
+		result = shallow(previousProperty, newProperty, depth);
 	} else {
 		result = reference(previousProperty, newProperty);
 	}
