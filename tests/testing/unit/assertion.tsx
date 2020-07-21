@@ -4,7 +4,7 @@ const { assert } = intern.getPlugin('chai');
 import { renderer, wrap, ignore, assertion } from '../../../src/testing/renderer';
 import { WidgetBase } from '../../../src/core/WidgetBase';
 import { v, w, tsx, create } from '../../../src/core/vdom';
-import { DNode } from '../../../src/core/interfaces';
+import { DNode, RenderResult } from '../../../src/core/interfaces';
 
 class MyWidget extends WidgetBase<{
 	toggleProperty?: boolean;
@@ -70,10 +70,11 @@ class ListWidget extends WidgetBase {
 
 const baseListAssertion = assertion(() => v('div', { classes: ['root'] }, [v(WrappedList.tag, [])]));
 
+const First = create().children<string>()(({ children }) => <div>{children()}</div>);
 class MultiRootWidget extends WidgetBase<{ after?: boolean; last?: boolean }> {
 	render() {
 		const { after, last = true } = this.properties;
-		const result = [v('div', ['first'])];
+		const result: DNode[] = [w(First, {}, ['first'])];
 		if (after) {
 			result.push(v('div', ['after']));
 		}
@@ -84,10 +85,13 @@ class MultiRootWidget extends WidgetBase<{ after?: boolean; last?: boolean }> {
 	}
 }
 
-const WrappedFirst = wrap('div');
+const WrappedFirst = wrap(First);
 const WrappedSecond = wrap('div');
 
-const baseMultiRootAssertion = assertion(() => [v(WrappedFirst.tag, ['first']), v(WrappedSecond.tag, ['last'])]);
+const baseMultiRootAssertion = assertion(() => [
+	<WrappedFirst>first</WrappedFirst>,
+	<WrappedSecond>last</WrappedSecond>
+]);
 
 const tsxAssertion = assertion(() => (
 	<div classes={['root']}>
@@ -115,6 +119,21 @@ describe('new/assertion', () => {
 		const children = baseAssertion.getChildren(WrappedHeader);
 		// TODO this is pony
 		assert.equal(Array.isArray(children) ? children[0] : children, 'hello');
+	});
+
+	it('can get a child of a functional child widget', () => {
+		const AWidget = create().children<{ foo(): RenderResult }>()(({ children }) => children()[0].foo());
+		const WrappedDiv = wrap('div');
+		const testAssertion = assertion(() => (
+			<div>
+				<AWidget>
+					{{
+						foo: () => [<WrappedDiv>child</WrappedDiv>]
+					}}
+				</AWidget>
+			</div>
+		));
+		assert.deepEqual(testAssertion.getChildren(WrappedDiv), ['child']);
 	});
 
 	it('can assert a base assertion', () => {
@@ -199,6 +218,35 @@ describe('new/assertion', () => {
 		r.expect(baseAssertion.setChildren(WrappedHeader, () => ['replace']));
 	});
 
+	it('can set a child of a functional child widget', () => {
+		const AWidget = create().children<{ bar: RenderResult; foo(): RenderResult }>()(({ children }) => (
+			<div>
+				{children()[0].foo()}
+				{children()[0].bar}
+			</div>
+		));
+		const ParentWidget = create()(() => (
+			<div>
+				<AWidget>{{ foo: () => <div>bar</div>, bar: <div>foo</div> }}</AWidget>
+			</div>
+		));
+		const WrappedWidget = wrap(AWidget);
+		const r = renderer(() => <ParentWidget />);
+		r.child(WrappedWidget, { foo: [] });
+		const WrappedDiv = wrap('div');
+		const testAssertion = assertion(() => (
+			<div>
+				<WrappedWidget>
+					{{
+						foo: () => <WrappedDiv>foo</WrappedDiv>,
+						bar: <div>foo</div>
+					}}
+				</WrappedWidget>
+			</div>
+		));
+		r.expect(testAssertion.setChildren(WrappedDiv, () => ['bar']));
+	});
+
 	it('children set should be immutable', () => {
 		const factory = create();
 		const Widget = factory(function Widget() {
@@ -256,7 +304,7 @@ describe('new/assertion', () => {
 	});
 
 	it('can insert after a node in the root', () => {
-		const insertionAssertion = baseMultiRootAssertion.insertAfter(WrappedFirst, () => [v('div', {}, ['after'])]);
+		const insertionAssertion = baseMultiRootAssertion.insertAfter(WrappedFirst, () => [<div>after</div>]);
 		const r = renderer(() => w(MultiRootWidget, { after: true }));
 		r.expect(insertionAssertion);
 	});

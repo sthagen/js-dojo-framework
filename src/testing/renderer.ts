@@ -82,7 +82,13 @@ export interface Property {
 }
 
 interface RendererOptions {
-	middleware?: [MiddlewareResultFactory<any, any, any, any>, MiddlewareResultFactory<any, any, any, any>][];
+	middleware?: [
+		MiddlewareResultFactory<any, any, any, any>,
+		Pick<
+			MiddlewareResultFactory<any, any, any, any>,
+			Exclude<keyof MiddlewareResultFactory<any, any, any, any>, 'withType'>
+		>
+	][];
 }
 
 export type PropertiesComparatorFunction<T = any> = (actualProperties: T) => T;
@@ -100,7 +106,7 @@ function isWrappedNode(value: any): value is (WNode & { id: string }) | (WNode &
 
 function findNode<T extends Wrapped<any>>(renderResult: RenderResult, wrapped: T): VNode | WNode {
 	renderResult = decorateNodes(renderResult).nodes;
-	let nodes = Array.isArray(renderResult) ? [...renderResult] : [renderResult];
+	let nodes: any[] = Array.isArray(renderResult) ? [...renderResult] : [renderResult];
 	while (nodes.length) {
 		let node = nodes.pop();
 		if (isWrappedNode(node)) {
@@ -111,8 +117,24 @@ function findNode<T extends Wrapped<any>>(renderResult: RenderResult, wrapped: T
 		if (isVNode(node) || isWNode(node)) {
 			const children = node.children || [];
 			nodes = [...children, ...nodes];
+		} else if (node && typeof node === 'object') {
+			nodes = [
+				...Object.keys(node).reduce(
+					(newNodes, key) => {
+						if (typeof node[key] === 'function') {
+							const result = node[key]();
+							node[key] = result;
+							return Array.isArray(result) ? [...result, ...newNodes] : [result, ...newNodes];
+						}
+						return newNodes;
+					},
+					[] as any[]
+				),
+				...nodes
+			];
 		}
 	}
+
 	throw new Error('Unable to find node');
 }
 
@@ -138,20 +160,14 @@ export interface AssertionResult {
 	): AssertionResult;
 	insertBefore<T extends WidgetBaseInterface>(
 		target: Wrapped<Constructor<T>>,
-		children: TemplateChildren<T['children']>
+		children: TemplateChildren
 	): AssertionResult;
-	insertBefore<T extends WidgetFactory>(
-		target: Wrapped<T>,
-		children: TemplateChildren<T['children']>
-	): AssertionResult;
+	insertBefore<T extends WidgetFactory>(target: Wrapped<T>, children: TemplateChildren): AssertionResult;
 	insertAfter<T extends WidgetBaseInterface>(
 		target: Wrapped<Constructor<T>>,
-		children: TemplateChildren<T['children']>
+		children: TemplateChildren
 	): AssertionResult;
-	insertAfter<T extends WidgetFactory>(
-		target: Wrapped<T>,
-		children: TemplateChildren<T['children']>
-	): AssertionResult;
+	insertAfter<T extends WidgetFactory>(target: Wrapped<T>, children: TemplateChildren): AssertionResult;
 	insertSiblings<T extends WidgetBaseInterface>(
 		target: T,
 		children: TemplateChildren,

@@ -797,7 +797,7 @@ export interface ButtonAttributes extends VNodeProperties<HTMLButtonElement> {
 	formNoValidate?: boolean;
 	formTarget?: string;
 	name?: string;
-	type?: 'submit' | 'reset' | 'button';
+	type?: 'submit' | 'reset' | 'button' | 'menu';
 }
 
 export interface CanvasAttributes extends VNodeProperties<HTMLCanvasElement> {
@@ -1280,6 +1280,12 @@ export interface DefaultMiddlewareResult extends MiddlewareResult<any, any, any,
 
 export interface MiddlewareResultFactory<Props, Children, Middleware, ReturnValue> {
 	(): MiddlewareResult<Props, Children, Middleware, ReturnValue>;
+	withType: <Api extends ReturnValue, CustomProps = Props>() => MiddlewareResultFactory<
+		CustomProps,
+		Children,
+		Middleware,
+		Api
+	>;
 }
 
 export interface DefaultChildrenWNodeFactory<W extends WNodeFactoryTypes> {
@@ -1359,7 +1365,7 @@ export interface WNode<W extends WidgetBaseTypes = any> {
 /**
  * union type for all possible return types from render
  */
-export type DNode<W extends WidgetBaseTypes = any> = VNode | WNode<W> | undefined | null | string | boolean;
+export type DNode<W extends WidgetBaseTypes = any> = VNode | WNode<W> | undefined | null | string | boolean | number;
 
 /**
  * Property Change record for specific property diff functions
