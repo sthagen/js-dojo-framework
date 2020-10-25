@@ -66,7 +66,9 @@ export function decorate(actual: RenderResult, expected: RenderResult, instructi
 
 	let node = nodes.shift();
 	while (node) {
-		const [actualNodes, expectedNodes] = node;
+		const [actualNodes, expectedNodes] = node.map((nodes) =>
+			nodes.filter((node) => node != null && node !== true && node !== false)
+		);
 		let childNodes: DecorateTuple[] = [];
 		while (expectedNodes.length > 0) {
 			let actualNode: DNode | { [index: string]: any } = actualNodes.shift();
@@ -81,7 +83,16 @@ export function decorate(actual: RenderResult, expected: RenderResult, instructi
 						const expectedChild: any = expectedNode.children && expectedNode.children[0];
 						const actualChild: any = isNode(actualNode) && actualNode.children && actualNode.children[0];
 
-						if (typeof expectedChild === 'object') {
+						if (typeof expectedChild === 'function' || typeof actualChild === 'function') {
+							if (typeof expectedChild === 'function') {
+								const newExpectedChildren = expectedChild();
+								(expectedNode as any).children[0] = newExpectedChildren;
+							}
+							if (typeof actualChild === 'function') {
+								const newActualChildren = actualChild(...instruction.params);
+								(actualNode as any).children[0] = newActualChildren;
+							}
+						} else if (typeof expectedChild === 'object') {
 							const keys = Object.keys(expectedChild);
 							for (let i = 0; i < keys.length; i++) {
 								const key = keys[i];
@@ -93,13 +104,6 @@ export function decorate(actual: RenderResult, expected: RenderResult, instructi
 									const newActualChildren = actualChild[key](...(instruction.params[key] || []));
 									actualChild[key] = newActualChildren;
 								}
-							}
-						} else if (typeof expectedChild === 'function') {
-							const newExpectedChildren = expectedChild();
-							(expectedNode as any).children[0] = newExpectedChildren;
-							if (typeof actualChild === 'function') {
-								const newActualChildren = actualChild(...instruction.params);
-								(actualNode as any).children[0] = newActualChildren;
 							}
 						}
 					} else if (

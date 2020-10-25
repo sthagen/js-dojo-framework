@@ -171,6 +171,8 @@ export interface DomOptions {
 	on?: On;
 	diffType?: DiffType;
 	onAttach?: () => void;
+	onUpdate?: () => void;
+	onDetach?: () => void;
 }
 
 export interface VDomOptions {
@@ -464,7 +466,7 @@ export interface VNodeProperties<T extends EventTarget = EventTarget> extends Ar
 	readonly focus?: boolean | NodeOperationPredicate;
 
 	/**
-	 * determines is the element needs to be clicked
+	 * determines if the element needs to be clicked
 	 */
 	readonly click?: boolean | NodeOperationPredicate;
 
@@ -1147,7 +1149,7 @@ export interface InjectorItem<T = any> {
  */
 export interface WidgetProperties {
 	/**
-	 * The key for a widget. Used to differentiate uniquely identify child widgets for
+	 * The key for a widget. Used to uniquely identify child widgets for
 	 * rendering and instance management
 	 */
 	key?: string | number;
@@ -1158,7 +1160,7 @@ export interface WidgetProperties {
  */
 export interface KeyedWidgetProperties extends WidgetProperties {
 	/**
-	 * The key for a widget. Used to differentiate uniquely identify child widgets for
+	 * The key for a widget. Used to uniquely identify child widgets for
 	 * rendering and instance management
 	 */
 	key: string | number;
@@ -1217,6 +1219,8 @@ export interface VNode {
 export interface DomVNode extends VNode {
 	domNode: Text | Element;
 	onAttach?: () => void;
+	onUpdate?: () => void;
+	onDetach?: () => void;
 }
 
 export interface ESMDefaultWidgetBase<T extends WidgetBaseTypes> {

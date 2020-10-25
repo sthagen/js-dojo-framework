@@ -111,6 +111,11 @@ function findNode<T extends Wrapped<any>>(renderResult: RenderResult, wrapped: T
 		}
 		if (isVNode(node) || isWNode(node)) {
 			const children = node.children || [];
+			for (let i = 0; i < children.length; i++) {
+				if (typeof children[i] === 'function') {
+					children[i] = (children[i] as any)();
+				}
+			}
 			nodes = [...children, ...nodes];
 		} else if (node && typeof node === 'object') {
 			nodes = [
@@ -119,6 +124,9 @@ function findNode<T extends Wrapped<any>>(renderResult: RenderResult, wrapped: T
 						if (typeof node[key] === 'function') {
 							const result = node[key]();
 							node[key] = result;
+							return Array.isArray(result) ? [...result, ...newNodes] : [result, ...newNodes];
+						} else if (typeof node[key] === 'object') {
+							const result = node[key];
 							return Array.isArray(result) ? [...result, ...newNodes] : [result, ...newNodes];
 						}
 						return newNodes;
@@ -280,6 +288,9 @@ export function assertion(renderFunc: () => DNode | DNode[]) {
 			const node = findNode(render, wrapped);
 			node.children = node.children || [];
 			let childrenResult = children();
+			if (!Array.isArray(childrenResult)) {
+				childrenResult = [childrenResult];
+			}
 			switch (type) {
 				case 'prepend':
 					node.children = [...childrenResult, ...node.children];
