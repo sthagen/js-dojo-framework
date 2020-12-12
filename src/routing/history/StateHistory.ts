@@ -47,6 +47,9 @@ export class StateHistory implements HistoryInterface {
 		if (!leadingSlash.test(this._base)) {
 			this._base = `/${this._base}`;
 		}
+	}
+
+	public start() {
 		this._window.addEventListener('popstate', this._onChange, false);
 		this._onChange();
 	}
@@ -66,6 +69,16 @@ export class StateHistory implements HistoryInterface {
 		}
 
 		this._window.history.pushState({}, '', this._setBasePath(value));
+		this._onChange();
+	}
+
+	public replace(path: string) {
+		const value = stripBase(this._base, path);
+		if (this._current === value) {
+			return;
+		}
+
+		this._window.history.replaceState({}, '', this._setBasePath(value));
 		this._onChange();
 	}
 

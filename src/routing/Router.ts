@@ -90,9 +90,19 @@ export class Router extends Evented<{ nav: NavEvent; route: RouteEvent; outlet: 
 		this._history.set(path);
 	}
 
+	/**
+	 * Replaces the path against the registered history manager
+	 *
+	 * @param path The path to set on the history manager
+	 */
+	public replacePath(path: string): void {
+		this._history.replace(path);
+	}
+
 	public start() {
 		const { HistoryManager = HashHistory, base, window } = this._options;
 		this._history = new HistoryManager({ onChange: this._onChange, base, window });
+		this._history.start();
 		if (this._matchedRoutes.errorRoute && this._defaultRoute) {
 			const path = this.link(this._defaultRoute);
 			if (path) {
@@ -187,7 +197,7 @@ export class Router extends Evented<{ nav: NavEvent; route: RouteEvent; outlet: 
 	private _register(config: RouteConfig[], routes?: Route[], parentRoute?: Route): void {
 		routes = routes ? routes : this._routes;
 		for (let i = 0; i < config.length; i++) {
-			let { path, outlet, children, defaultRoute = false, defaultParams = {}, id, title } = config[i];
+			let { path, outlet, children, defaultRoute = false, defaultParams = {}, id, title, redirect } = config[i];
 			let [parsedPath, queryParamString] = path.split('?');
 			let queryParams: string[] = [];
 			parsedPath = this._stripLeadingSlash(parsedPath);
@@ -200,6 +210,7 @@ export class Router extends Evented<{ nav: NavEvent; route: RouteEvent; outlet: 
 				title,
 				path: parsedPath,
 				segments,
+				redirect,
 				defaultParams: parentRoute ? { ...parentRoute.defaultParams, ...defaultParams } : defaultParams,
 				children: [],
 				fullPath: parentRoute ? `${parentRoute.fullPath}/${parsedPath}` : parsedPath,
@@ -348,6 +359,15 @@ export class Router extends Evented<{ nav: NavEvent; route: RouteEvent; outlet: 
 		}
 
 		if (matchedRoute) {
+			if (matchedRoute.route.redirect && matchedRoute.type === 'index') {
+				let { redirect } = matchedRoute.route;
+				const params = { ...matchedRoute.params };
+				Object.keys(params).forEach((paramKey) => {
+					redirect = redirect.replace(`{${paramKey}}`, params[paramKey]);
+				});
+				this.setPath(redirect);
+				return;
+			}
 			if (matchedRoute.type === 'partial') {
 				matchedRoute.type = 'error';
 			}

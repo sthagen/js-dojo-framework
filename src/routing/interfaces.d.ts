@@ -19,6 +19,7 @@ export interface Route {
 	params: string[];
 	segments: string[];
 	children: Route[];
+	redirect?: string;
 	fullPath: string;
 	fullParams: string[];
 	fullQueryParams: string[];
@@ -34,6 +35,7 @@ export interface RouteConfig {
 	path: string;
 	outlet: string;
 	children?: RouteConfig[];
+	redirect?: string;
 	defaultParams?: Params;
 	defaultRoute?: boolean;
 	title?: string;
@@ -109,6 +111,11 @@ export interface RouterInterface {
 	 * Sets the path on the underlying history manager
 	 */
 	setPath(path: string): void;
+
+	/**
+	 * Replaces the path on the underlying history manager
+	 */
+	replacePath(path: string): void;
 
 	/**
 	 * Returns the outlet context if matched
@@ -206,9 +213,19 @@ export interface HistoryConstructor {
  */
 export interface History {
 	/**
+	 * Start the history manager
+	 */
+	start(): void;
+
+	/**
 	 * Sets the path on the history manager
 	 */
 	set(path: string): void;
+
+	/**
+	 * Replaces the path on the history manager
+	 */
+	replace(path: string): void;
 
 	/**
 	 * Adds a prefix to the path if the history manager requires

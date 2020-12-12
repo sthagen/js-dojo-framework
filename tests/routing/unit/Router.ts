@@ -675,4 +675,57 @@ describe('Router', () => {
 			assert.strictEqual(contextMap!.size, 2);
 		});
 	});
+
+	describe('redirect', () => {
+		it('should redirect from a default route', () => {
+			const router = new Router(
+				[
+					{
+						path: '/',
+						id: 'foo',
+						outlet: 'main',
+						redirect: '/foo/bar',
+						defaultRoute: true
+					},
+					{
+						path: 'foo/bar',
+						id: 'bar',
+						outlet: 'bar'
+					}
+				],
+				{ HistoryManager }
+			);
+			const contextMap = router.getOutlet('bar');
+			assert.isOk(contextMap);
+			assert.strictEqual(contextMap!.size, 1);
+		});
+
+		it('should redirect to path on matched route', () => {
+			const router = new Router(
+				[
+					{
+						path: 'foo/{param}',
+						id: 'foo',
+						outlet: 'main',
+						redirect: 'foo/{param}/bar',
+						defaultParams: {
+							param: 'default-param'
+						},
+						defaultRoute: true,
+						children: [
+							{
+								path: 'bar',
+								id: 'bar',
+								outlet: 'bar'
+							}
+						]
+					}
+				],
+				{ HistoryManager }
+			);
+			const contextMap = router.getOutlet('bar');
+			assert.isOk(contextMap);
+			assert.strictEqual(contextMap!.size, 1);
+		});
+	});
 });

@@ -6,6 +6,9 @@ export class MemoryHistory implements History {
 
 	constructor({ onChange }: HistoryOptions) {
 		this._onChangeFunction = onChange;
+	}
+
+	public start() {
 		this._onChange();
 	}
 
@@ -19,6 +22,10 @@ export class MemoryHistory implements History {
 		}
 		this._current = path;
 		this._onChange();
+	}
+
+	public replace(path: string) {
+		this.set(path);
 	}
 
 	public get current(): string {
